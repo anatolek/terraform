@@ -20,11 +20,6 @@ variable "instance_type" {
   description = "ASG Instance type"
 }
 
-variable "volume_size" {
-  type        = map(string)
-  description = "ASG Instance type"
-}
-
 variable "root_volume_size" {
   type        = map(number)
   description = "Instance root volume size"

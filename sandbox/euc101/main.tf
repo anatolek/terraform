@@ -63,15 +63,14 @@ module "web_server_sg" {
 }
 
 module "asg" {
-  source  = "terraform-aws-modules/autoscaling/aws"
-  version = "~> 6.0"
+  source = "github.com/anatolek/terraform-aws-autoscaling"
 
   # Autoscaling group
   name = "${local.env_name}-${var.env_class}-asg"
 
   min_size                  = 1
   max_size                  = 3
-  desired_capacity          = 2
+  desired_capacity          = 3
   wait_for_capacity_timeout = 0
   health_check_type         = "EC2"
   vpc_zone_identifier       = module.vpc.public_subnets
@@ -139,20 +138,24 @@ module "asg" {
   }
 
   # Autoscaling Policy
-  # -----------------------------------------------
-  #     -infinity   40%          80%   infinity
-  # -----------------------------------------------
-  #         -2       | Unchanged  |      +2
-  # -----------------------------------------------
+  # --------------------------------------------------------
+  #     -infinity   30%        40%          80%   +infinity
+  # --------------------------------------------------------
+  #         -1       |    -1    | Unchanged  |    +2
+  # --------------------------------------------------------
   scaling_policies = {
     step-downscaling-policy = {
       policy_type             = "StepScaling"
       adjustment_type         = "ChangeInCapacity"
       metric_aggregation_type = "Average"
-      step_adjustment = {
-        scaling_adjustment          = -2
+      step_adjustment = [{
+        scaling_adjustment          = -1
         metric_interval_upper_bound = 0
-      }
+        metric_interval_lower_bound = -10
+        }, {
+        scaling_adjustment          = -1
+        metric_interval_upper_bound = -10
+      }]
     }
     simple-upscaling-policy = {
       policy_type             = "SimpleScaling"
